@@ -90,7 +90,7 @@ public class TestcontainersConfiguration {
     }
 
     public DockerImageName getVncDockerImageName() {
-        return getImage("vncrecorder.container.image", "testcontainers/vnc-recorder:1.1.0");
+        return getImage("vncrecorder.container.image", "testcontainers/vnc-recorder:1.2.0");
     }
 
     @Deprecated

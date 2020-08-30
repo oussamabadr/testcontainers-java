@@ -9,6 +9,7 @@ import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.utility.TestcontainersConfiguration;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -88,7 +89,16 @@ public class VncRecordingContainer extends GenericContainer<VncRecordingContaine
     }
 
     @SneakyThrows
+    public void saveRecordingToFile(File file) {
+        try(InputStream inputStream = streamRecording()) {
+            Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    @SneakyThrows
     public InputStream streamRecording() {
+        fixRecordDuration();
+
         TarArchiveInputStream archiveInputStream = new TarArchiveInputStream(
                 dockerClient.copyArchiveFromContainerCmd(getContainerId(), RECORDING_FILE_NAME).exec()
         );
@@ -96,10 +106,9 @@ public class VncRecordingContainer extends GenericContainer<VncRecordingContaine
         return archiveInputStream;
     }
 
-    @SneakyThrows
-    public void saveRecordingToFile(File file) {
-        try(InputStream inputStream = streamRecording()) {
-            Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        }
+    private void fixRecordDuration() throws IOException, InterruptedException {
+        String newFlvOutput = "/newScreen.flv";
+        execInContainer("ffmpeg" , "-i", RECORDING_FILE_NAME, "-vcodec", "libx264", newFlvOutput);
+        execInContainer("mv" , "-f", newFlvOutput, RECORDING_FILE_NAME);
     }
 }
